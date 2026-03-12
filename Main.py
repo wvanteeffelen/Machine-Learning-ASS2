@@ -14,6 +14,18 @@ def main():
     pass
     
 
+def area(points):
+    hull_2d = ConvexHull(points[:, :2])
+    hull_area = hull_2d.volume
+
+    return hull_area
+
+
+def mean_height(points):
+    mean_h = np.mean(points[:, 2])
+    return mean_h
+
+
 
 if __name__=='__main__':
     main()
