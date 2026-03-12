@@ -16,7 +16,6 @@ from os import listdir
 def area(points):
     hull_2d = ConvexHull(points[:, :2])
     hull_area = hull_2d.volume
-
     return hull_area
 
 
@@ -41,9 +40,23 @@ def linearity(points):
     w = eigenvalue_calculator(points)
     return (w[2]-w[1]) / (w[2] + 1e-5)
 
-def planarity(points):
+def sphericity(points):
     w = eigenvalue_calculator(points)
     return w[0] / (w[2] + 1e-5)
+
+def planarity(points):
+    w = eigenvalue_calculator(points)
+    return (w[1]-w[0]) / (w[2] + 1e-5)
+
+def centre_of_mass(points):
+    com = np.mean(points, axis=0)
+    return np.mean(np.linalg.norm(points-com))
+
+def mean_height(points):
+    mean_h = np.mean(points[:, 2])
+    return mean_h
+
+
 
 def read_xyz(filenm):
     """
