@@ -10,8 +10,7 @@ from tqdm import tqdm
 from os.path import exists, join
 from os import listdir
 
-def main():
-    pass
+
     
 
 def area(points):
@@ -26,6 +25,43 @@ def mean_height(points):
     return mean_h
 
 
+def eigenvalue_calculator(points, radius=0.2):
+    kd_tree_3d = KDTree(points, leaf_size=5)
+
+    neighbours = kd_tree_3d.query_radius(points, r=radius)
+
+    cov = np.cov(neighbours.T)
+    w, _ = np.linalg.eig(cov)
+    w.sort()
+
+    return w
+
+
+def linearity(points):
+    w = eigenvalue_calculator(points)
+    return (w[2]-w[1]) / (w[2] + 1e-5)
+
+def planarity(points):
+    w = eigenvalue_calculator(points)
+    return w[0] / (w[2] + 1e-5)
+
+def read_xyz(filenm):
+    """
+    Reading points
+        filenm: the file name
+    """
+    points = []
+    with open(filenm, 'r') as f_input:
+        for line in f_input:
+            p = line.split()
+            p = [float(i) for i in p]
+            points.append(p)
+    points = np.array(points).astype(np.float32)
+    return points
+
+def main():
+    data_path = 'pointclouds-500/pointclouds-500'
+    
 
 if __name__=='__main__':
     main()
