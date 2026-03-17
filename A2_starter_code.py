@@ -50,6 +50,10 @@ class urban_object:
         height = np.amax(self.points[:, 2])
         self.feature.append(height)
 
+        # calculate the mean height
+        mean_h = np.mean(self.points[:, 2])
+        self.feature.append(mean_h)
+
         # get the root point and top point
         root = self.points[[np.argmin(self.points[:, 2])]]
         top = self.points[[np.argmax(self.points[:, 2])]]
@@ -74,6 +78,11 @@ class urban_object:
         shape_index = 1.0 * hull_area / hull_perimeter
         self.feature.append(shape_index)
 
+        # center of mass, calculate spread around the centroid
+        com = np.mean(self.points, axis=0)
+        spread_com = np.mean(np.linalg.norm(self.points-com))
+        self.feature.append(spread_com)
+
         # obtain the point cluster near the top area
         k_top = max(int(len(self.points) * 0.005), 100)
         idx = kd_tree_3d.query(top, k=k_top, return_distance=False)
@@ -85,10 +94,11 @@ class urban_object:
         w, _ = np.linalg.eig(cov)
         w.sort()
 
-        # calculate the linearity and sphericity
+        # calculate the linearity, sphericity and planarity
         linearity = (w[2]-w[1]) / (w[2] + 1e-5)
         sphericity = w[0] / (w[2] + 1e-5)
-        self.feature += [linearity, sphericity]
+        planarity = (w[1]-w[0]) / (w[2] + 1e-5)
+        self.feature += [linearity, sphericity, planarity]
 
 
 def read_xyz(filenm):
@@ -141,8 +151,9 @@ def feature_preparation(data_path):
     outputs = np.array(input_data).astype(np.float32)
 
     # write the output to a local file
-    data_header = 'ID,label,height,root_density,area,shape_index,linearity,sphericity'
+    data_header = data_header = 'ID,label,height,mean_height,root_density,area,shape_index,spread_com,linearity,sphericity,planarity'
     np.savetxt(data_file, outputs, fmt='%10.5f', delimiter=',', newline='\n', header=data_header)
+
 
 
 def data_loading(data_file='data.txt'):
@@ -227,6 +238,7 @@ if __name__=='__main__':
     # load the data
     print('Start loading data from the local file')
     ID, X, y = data_loading()
+
 
     # visualize features
     print('Visualize the features')
