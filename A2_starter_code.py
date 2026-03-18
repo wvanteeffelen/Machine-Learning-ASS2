@@ -100,6 +100,55 @@ class urban_object:
         planarity = (w[1]-w[0]) / (w[2] + 1e-5)
         self.feature += [linearity, sphericity, planarity]
 
+def feature_selection(X, y):
+    # Within-class scatter matrix:
+    N = len(X)
+    mean = np.mean(X, axis=0)
+    classes = np.unique(y)
+    cov_matrices = {}
+    total_within = 0
+    total_between = 0
+    for k in classes:
+        Xk = X[y == k]
+        Nk = len(Xk)
+        mean_k = np.mean(Xk, axis=0)
+
+        Xk_diff = Xk - mean_k
+        cov_k = (Xk_diff.T @ Xk_diff) / (Nk - 1)
+        cov_matrices[k] = cov_k
+
+        within = (Nk/N)*cov_k
+        total_within += within
+
+        mean_k = np.mean(Xk, axis=0)
+        diff = (mean_k - mean).reshape(-1, 1) 
+        between = (Nk/N)*(diff @ diff.T)
+        total_between += between
+    
+    J = np.trace(total_between)/np.trace(total_within)
+
+    return J
+
+def select_4_features():
+    feature_names = ["height", "mean_height", "root_density", "area","shape_index", "spread_com", "linearity", "sphericity", "planarity"]
+    scores = []
+
+    for i in range(0, X.shape[1]):
+        J = feature_selection(X[:, i:i+1], y)
+        scores.append((feature_names[i], J))
+
+    scores.sort(key=lambda x: x[1], reverse=True)
+
+    for name, score in scores:
+        print(f"{name}: {score:.4f}")
+
+    top4 = scores[:4]
+    top4_names = []
+    for name, score in top4:
+        top4_names.append(name)
+
+    print(f'The four features with the best score are: {top4_names}')
+    return top4_names
 
 def read_xyz(filenm):
     """
@@ -238,6 +287,10 @@ if __name__=='__main__':
     # load the data
     print('Start loading data from the local file')
     ID, X, y = data_loading()
+
+    # determine the 4 most important features
+    print('Feature importance based on Within-class scatter matrix and Between-class scatter matrix...')
+    selected_features = select_4_features()
 
 
     # visualize features
