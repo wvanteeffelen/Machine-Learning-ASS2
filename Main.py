@@ -78,12 +78,3 @@ def main():
 
 if __name__=='__main__':
     main()
-
-
-
-    # ####hella
-    # hello
-    # hello
-    # hello
-    # testing
-    #class make for python
