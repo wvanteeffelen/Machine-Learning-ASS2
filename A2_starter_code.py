@@ -257,7 +257,7 @@ def SVM_classification(X, y):
         y: labels
     """
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.4)
-    clf = svm.SVC()
+    clf = svm.SVC(kernel='linear')
     clf.fit(X_train, y_train)
     y_preds = clf.predict(X_test)
     acc = accuracy_score(y_test, y_preds)
