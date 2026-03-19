@@ -17,6 +17,7 @@ from scipy.spatial import ConvexHull
 from tqdm import tqdm
 from os.path import exists, join
 from os import listdir
+from sklearn.ensemble import RandomForestClassifier as RF
 
 
 class urban_object:
@@ -237,14 +238,14 @@ def feature_visualization(X):
 
     # plot the data with first two features
     for i in range(5):
-        ax.scatter(X[100*i:100*(i+1), 3], X[100*i:100*(i+1), 4], marker="o", c=colors[i], edgecolor="k", label=labels[i])
+        ax.scatter(X[100*i:100*(i+1), 2], X[100*i:100*(i+1), 0], marker="o", c=colors[i], edgecolor="k", label=labels[i])
 
     # show the figure with labels
     """
     Replace the axis labels with your own feature names
     """
-    ax.set_xlabel('x1:root density')
-    ax.set_ylabel('x2:area')
+    ax.set_xlabel('x1:root_density')
+    ax.set_ylabel('x2:height')
     ax.legend()
     plt.show()
 
@@ -272,7 +273,15 @@ def RF_classification(X, y):
         X: features
         y: labels
     """
-    pass
+    clf = RF(n_estimators=100, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.4)
+    clf.fit(X_train, y_train)
+    pred = clf.predict(X_test)
+    acc = accuracy_score(y_test, pred)
+    print("RF accuracy: %5.2f" % acc)
+    print("confusion matrix")
+    conf = confusion_matrix(y_test, pred)
+    print(conf)
 
 
 if __name__=='__main__':
