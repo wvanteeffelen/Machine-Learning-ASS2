@@ -20,6 +20,15 @@ from os import listdir
 from sklearn.ensemble import RandomForestClassifier as RF
 
 
+
+def get_feature_indices(selected_feature_names):
+    feature_names = ["height", "mean_height", "std_height", "dx", "dy", "dz",
+                     "3d_density", "root_density", "hull_area", "shape_index",
+                     "circularity", "spread_com", "linearity", "sphericity", "planarity"]
+    return [feature_names.index(name) for name in selected_feature_names]
+
+
+
 class urban_object:
     """
     Define an urban object
@@ -55,6 +64,21 @@ class urban_object:
         mean_h = np.mean(self.points[:, 2])
         self.feature.append(mean_h)
 
+        # calculate standard deviation of the height
+        std_height = np.std(self.points[:, 2])
+        self.feature.append(std_height)
+
+        # calculate the 3D bounding box dimensions
+        mins = np.min(self.points, axis=0)
+        maxs = np.max(self.points, axis=0)
+        dx,dy,dz = maxs - mins
+        self.feature.extend([dx,dy,dz])
+
+        # calculate the 3D density
+        volume = dx * dy * dz + 1e-5
+        density_3d = len(self.points) / volume
+        self.feature.append(density_3d)
+
         # get the root point and top point
         root = self.points[[np.argmin(self.points[:, 2])]]
         top = self.points[[np.argmax(self.points[:, 2])]]
@@ -72,12 +96,17 @@ class urban_object:
         # compute the 2D footprint and calculate its area
         hull_2d = ConvexHull(self.points[:, :2])
         hull_area = hull_2d.volume
+        hull_perimeter = hull_2d.area
         self.feature.append(hull_area)
 
         # get the hull shape index
         hull_perimeter = hull_2d.area
         shape_index = 1.0 * hull_area / hull_perimeter
         self.feature.append(shape_index)
+
+        # determine the circularity
+        circularity = 4 * math.pi * hull_area / (hull_perimeter**2 + 1e-5)
+        self.feature.append(circularity)
 
         # center of mass, calculate spread around the centroid
         com = np.mean(self.points, axis=0)
@@ -131,7 +160,7 @@ def feature_selection(X, y):
     return J
 
 def select_4_features():
-    feature_names = ["height", "mean_height", "root_density", "area","shape_index", "spread_com", "linearity", "sphericity", "planarity"]
+    feature_names = ["height", "mean_height", "std_height", "dx", "dy", "dz", "3d_density", "root_density", "hull_area","shape_index", "circularity","spread_com", "linearity", "sphericity", "planarity"]
     scores = []
 
     for i in range(0, X.shape[1]):
@@ -201,7 +230,7 @@ def feature_preparation(data_path):
     outputs = np.array(input_data).astype(np.float32)
 
     # write the output to a local file
-    data_header = data_header = 'ID,label,height,mean_height,root_density,area,shape_index,spread_com,linearity,sphericity,planarity'
+    data_header = data_header = 'ID,label,height,mean_height,std_height,dx,dy,dz,3d_density,root_density,hull_area,shape_index,circularity,spread_com,linearity,sphericity,planarity'
     np.savetxt(data_file, outputs, fmt='%10.5f', delimiter=',', newline='\n', header=data_header)
 
 
@@ -301,7 +330,6 @@ if __name__=='__main__':
     print('Feature importance based on Within-class scatter matrix and Between-class scatter matrix...')
     selected_features = select_4_features()
 
-
     # visualize features
     print('Visualize the features')
     feature_visualization(X=X)
@@ -313,3 +341,10 @@ if __name__=='__main__':
     # RF classification
     print('Start RF classification')
     RF_classification(X, y)
+
+    # select 4 best features
+    selected_indices = get_feature_indices(selected_features)
+    X_selected = X[:, selected_indices]
+
+    SVM_classification(X_selected, y)
+    RF_classification(X_selected, y)
