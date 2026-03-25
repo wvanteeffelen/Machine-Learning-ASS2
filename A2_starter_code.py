@@ -22,9 +22,9 @@ from sklearn.ensemble import RandomForestClassifier as RF
 
 
 def get_feature_indices(selected_feature_names):
-    feature_names = ["height", "mean_height", "std_height", "dx", "dy", "dz",
+    feature_names = ["std_height", "dx", "dy", "dz",
                      "3d_density", "root_density", "hull_area", "shape_index",
-                     "circularity", "spread_com", "linearity", "sphericity", "planarity"]
+                     "circularity", "linearity", "sphericity", "planarity"]
     return [feature_names.index(name) for name in selected_feature_names]
 
 
@@ -56,14 +56,6 @@ class urban_object:
         """
         Compute the features, here we provide two example features. You're encouraged to design your own features
         """
-        # calculate the height
-        height = np.amax(self.points[:, 2])
-        self.feature.append(height)
-
-        # calculate the mean height
-        mean_h = np.mean(self.points[:, 2])
-        self.feature.append(mean_h)
-
         # calculate standard deviation of the height
         std_height = np.std(self.points[:, 2])
         self.feature.append(std_height)
@@ -107,12 +99,7 @@ class urban_object:
         # determine the circularity
         circularity = 4 * math.pi * hull_area / (hull_perimeter**2 + 1e-5)
         self.feature.append(circularity)
-
-        # center of mass, calculate spread around the centroid
-        com = np.mean(self.points, axis=0)
-        spread_com = np.mean(np.linalg.norm(self.points-com))
-        self.feature.append(spread_com)
-
+    
         # obtain the point cluster near the top area
         k_top = max(int(len(self.points) * 0.005), 100)
         idx = kd_tree_3d.query(top, k=k_top, return_distance=False)
@@ -160,7 +147,7 @@ def feature_selection(X, y):
     return J
 
 def select_4_features():
-    feature_names = ["height", "mean_height", "std_height", "dx", "dy", "dz", "3d_density", "root_density", "hull_area","shape_index", "circularity","spread_com", "linearity", "sphericity", "planarity"]
+    feature_names = ["std_height", "dx", "dy", "dz", "3d_density", "root_density", "hull_area","shape_index", "circularity", "linearity", "sphericity", "planarity"]
     scores = []
 
     for i in range(0, X.shape[1]):
@@ -230,7 +217,7 @@ def feature_preparation(data_path):
     outputs = np.array(input_data).astype(np.float32)
 
     # write the output to a local file
-    data_header = data_header = 'ID,label,height,mean_height,std_height,dx,dy,dz,3d_density,root_density,hull_area,shape_index,circularity,spread_com,linearity,sphericity,planarity'
+    data_header = data_header = 'ID,label,std_height,dx,dy,dz,3d_density,root_density,hull_area,shape_index,circularity,linearity,sphericity,planarity'
     np.savetxt(data_file, outputs, fmt='%10.5f', delimiter=',', newline='\n', header=data_header)
 
 
