@@ -277,13 +277,13 @@ def feature_visualization(X):
     plt.show()
 
 
-def SVM_classification(X, y):
+def SVM_classification(X, y, test_size):
     """
     Conduct SVM classification
         X: features
         y: labels
     """
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.4)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size)
     clf = svm.SVC(kernel='linear')
     clf.fit(X_train, y_train)
     y_preds = clf.predict(X_test)
@@ -293,15 +293,17 @@ def SVM_classification(X, y):
     conf = confusion_matrix(y_test, y_preds)
     print(conf)
 
+    return acc
 
-def RF_classification(X, y):
+
+def RF_classification(X, y, test_size):
     """
     Conduct RF classification
         X: features
         y: labels
     """
     clf = RF(n_estimators=100, random_state=42)
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.4)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size)
     clf.fit(X_train, y_train)
     pred = clf.predict(X_test)
     acc = accuracy_score(y_test, pred)
@@ -309,6 +311,7 @@ def RF_classification(X, y):
     print("confusion matrix")
     conf = confusion_matrix(y_test, pred)
     print(conf)
+    return acc
 
 
 if __name__=='__main__':
@@ -330,19 +333,28 @@ if __name__=='__main__':
 
     # visualize features
     print('Visualize the features')
-    feature_visualization(X=X)
+    # feature_visualization(X=X)
 
     # SVM classification
     print('Start SVM classification')
-    SVM_classification(X, y)
+    accuracies = []
+    for i in range(1,10):
+        accuracies.append(SVM_classification(X, y, 0.1*i))
+    plt.plot([i+1 for i in range(9)], accuracies)
+    plt.show()
 
     # RF classification
     print('Start RF classification')
-    RF_classification(X, y)
+    accuracies=[]
+    for i in range(1,10):
+        accuracies.append(RF_classification(X, y, 0.1*i))
+    plt.plot([i+1 for i in range(9)], accuracies)
+    plt.show()
+    
 
     # select 4 best features
     selected_indices = get_feature_indices(selected_features)
     X_selected = X[:, selected_indices]
 
-    SVM_classification(X_selected, y)
-    RF_classification(X_selected, y)
+    SVM_classification(X_selected, y, .4)
+    RF_classification(X_selected, y, .4)
