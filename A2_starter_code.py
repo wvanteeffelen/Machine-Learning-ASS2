@@ -256,26 +256,24 @@ def feature_visualization(X):
     Visualize the features
         X: input features. This assumes classes are stored in a sequential manner
     """
-    # initialize a plot
-    fig = plt.figure()
-    ax = fig.add_subplot()
-    plt.title("feature subset visualization of 5 classes", fontsize="small")
 
     # define the labels and corresponding colors
     colors = ['firebrick', 'grey', 'darkorange', 'dodgerblue', 'olivedrab']
     labels = ['building', 'car', 'fence', 'pole', 'tree']
+    
+    maxF = max(X[:,0])
+    minF = min(X[:,0])
 
-    # plot the data with first two features
+    bins = np.linspace(minF, maxF, 11)  # 10 bins
+
+    fig, axes = plt.subplots(1, 5, figsize=(20, 4), sharey=True)
+
     for i in range(5):
-        ax.scatter(X[100*i:100*(i+1), 2], X[100*i:100*(i+1), 0], marker="o", c=colors[i], edgecolor="k", label=labels[i])
-
-    # show the figure with labels
-    """
-    Replace the axis labels with your own feature names
-    """
-    ax.set_xlabel('x1:root_density')
-    ax.set_ylabel('x2:height')
-    ax.legend()
+        data = X[100*i:100*(i+1), 0]
+        axes[i].hist(data, bins=bins, color=colors[i])
+        axes[i].set_title(f"{labels[i]}")
+    fig.suptitle(f"Histograms of the feature x", fontsize=16)
+    plt.tight_layout()
     plt.show()
 
 
