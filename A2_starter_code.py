@@ -18,6 +18,7 @@ from tqdm import tqdm
 from os.path import exists, join
 from os import listdir
 from sklearn.ensemble import RandomForestClassifier as RF
+from matplotlib.font_manager import FontProperties
 
 
 
@@ -264,6 +265,12 @@ def feature_visualization(X):
     plt.show()
 
 
+def OA(X, y, conf) -> float:
+    N = len(X)
+    C = 5
+    OA = 1/N * conf.trace()
+    return OA
+
 def SVM_classification(X, y, test_size):
     """
     Conduct SVM classification
@@ -278,9 +285,11 @@ def SVM_classification(X, y, test_size):
     print("SVM accuracy: %5.2f" % acc)
     print("confusion matrix")
     conf = confusion_matrix(y_test, y_preds)
-    print(conf)
+    #print(conf)
+    OveralAcc = OA(X,y,conf)
+    print(f"Overal accuracy = {OveralAcc:.2f}")
 
-    return acc
+    return OveralAcc
 
 
 def RF_classification(X, y, test_size):
@@ -297,8 +306,29 @@ def RF_classification(X, y, test_size):
     print("RF accuracy: %5.2f" % acc)
     print("confusion matrix")
     conf = confusion_matrix(y_test, pred)
-    print(conf)
-    return acc
+    #print(conf)
+
+    OveralAcc = OA(X,y,conf)
+    print(f"Overal accuracy = {OveralAcc:.2f}")
+    return OveralAcc
+
+def plot_accuracies(accuracies, title):
+
+    font = FontProperties(family='MS Gothic')
+
+    fig = plt.figure(facecolor=(.9,.9,.9))
+    ax = fig.add_subplot(1,1,1)
+    ax.set_facecolor((.9,.9,.9))
+    plt.plot([f'{i+1}:{9-i}' for i in range(9)], accuracies)
+    plt.title(title, fontproperties=font, fontsize=13)
+    plt.xlabel("Training/Test ratio", fontproperties=font)
+    plt.ylabel("Overal Accuracy", fontproperties=font)
+
+    for spine in ax.spines:
+        ax.spines[spine].set_visible(False)
+    ax.grid()
+
+    plt.show()
 
 
 if __name__=='__main__':
@@ -322,26 +352,26 @@ if __name__=='__main__':
     print('Visualize the features')
     # feature_visualization(X=X)
 
+    selected_indices = get_feature_indices(selected_features)
+    X_selected = X[:, selected_indices]
+
     # SVM classification
     print('Start SVM classification')
     accuracies = []
     for i in range(1,10):
-        accuracies.append(SVM_classification(X, y, 0.1*i))
-    plt.plot([i+1 for i in range(9)], accuracies)
-    plt.show()
+        accuracies.append(SVM_classification(X_selected, y, 0.1*i))
+    plot_accuracies(accuracies, "SVM overal accuracy per training/test ratio")
 
     # RF classification
     print('Start RF classification')
     accuracies=[]
     for i in range(1,10):
-        accuracies.append(RF_classification(X, y, 0.1*i))
-    plt.plot([i+1 for i in range(9)], accuracies)
-    plt.show()
+        accuracies.append(RF_classification(X_selected, y, 0.1*i))
+    plot_accuracies(accuracies, "RF overal accuracy per training/test ratio")
     
 
     # select 4 best features
-    selected_indices = get_feature_indices(selected_features)
-    X_selected = X[:, selected_indices]
+    
 
     SVM_classification(X_selected, y, .4)
     RF_classification(X_selected, y, .4)
