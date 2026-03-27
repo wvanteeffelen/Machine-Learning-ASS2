@@ -56,17 +56,17 @@ class urban_object:
         """
         Compute the features, here we provide two example features. You're encouraged to design your own features
         """
-        # calculate standard deviation of the height
+        # 1. calculate standard deviation of the height
         std_height = np.std(self.points[:, 2])
         self.feature.append(std_height)
 
-        # calculate the 3D bounding box dimensions
+        # 2. calculate the 3D bounding box dimensions
         mins = np.min(self.points, axis=0)
         maxs = np.max(self.points, axis=0)
         dx,dy,dz = maxs - mins
         self.feature.extend([dx,dy,dz])
 
-        # calculate the 3D density
+        # 3. calculate the 3D density
         volume = dx * dy * dz + 1e-5
         density_3d = len(self.points) / volume
         self.feature.append(density_3d)
@@ -79,24 +79,24 @@ class urban_object:
         kd_tree_2d = KDTree(self.points[:, :2], leaf_size=5)
         kd_tree_3d = KDTree(self.points, leaf_size=5)
 
-        # compute the root point planar density
+        # 4. compute the root point planar density
         radius_root = 0.2
         count = kd_tree_2d.query_radius(root[:, :2], r=radius_root, count_only=True)
         root_density = 1.0*count[0] / len(self.points)
         self.feature.append(root_density)
 
-        # compute the 2D footprint and calculate its area
+        # 5. Hull Area - compute the 2D footprint and calculate its area
         hull_2d = ConvexHull(self.points[:, :2])
         hull_area = hull_2d.volume
         hull_perimeter = hull_2d.area
         self.feature.append(hull_area)
 
-        # get the hull shape index
+        # 6. Shape Index - get the hull shape index
         hull_perimeter = hull_2d.area
         shape_index = 1.0 * hull_area / hull_perimeter
         self.feature.append(shape_index)
 
-        # determine the circularity
+        # 7. Circularity - determine the circularity
         circularity = 4 * math.pi * hull_area / (hull_perimeter**2 + 1e-5)
         self.feature.append(circularity)
     
@@ -111,7 +111,7 @@ class urban_object:
         w, _ = np.linalg.eig(cov)
         w.sort()
 
-        # calculate the linearity, sphericity and planarity
+        # 8,9,10. calculate the linearity, sphericity and planarity
         linearity = (w[2]-w[1]) / (w[2] + 1e-5)
         sphericity = w[0] / (w[2] + 1e-5)
         planarity = (w[1]-w[0]) / (w[2] + 1e-5)
