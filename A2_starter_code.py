@@ -18,6 +18,7 @@ from tqdm import tqdm
 from os.path import exists, join
 from os import listdir
 from sklearn.ensemble import RandomForestClassifier as RF
+from matplotlib.font_manager import FontProperties
 
 
 
@@ -157,7 +158,7 @@ def select_4_features():
     scores.sort(key=lambda x: x[1], reverse=True)
 
     for name, score in scores:
-        print(f"{name}: {score:.4f}")
+        print(f"{name:<15}: {'':<10}{score:.4f}")
 
     top4 = scores[:4]
     top4_names = []
@@ -264,38 +265,70 @@ def feature_visualization(X):
     plt.show()
 
 
-def SVM_classification(X, y):
+def OA(X, y, conf) -> float:
+    N = len(X)
+    C = 5
+    OA = 1/N * conf.trace()
+    return OA
+
+def SVM_classification(X, y, test_size):
     """
     Conduct SVM classification
         X: features
         y: labels
     """
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.4)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size)
     clf = svm.SVC(kernel='linear')
     clf.fit(X_train, y_train)
     y_preds = clf.predict(X_test)
     acc = accuracy_score(y_test, y_preds)
-    print("SVM accuracy: %5.2f" % acc)
-    print("confusion matrix")
+    # print("SVM accuracy: %5.2f" % acc)
+    # print("confusion matrix")
     conf = confusion_matrix(y_test, y_preds)
-    print(conf)
+    #print(conf)
+    OveralAcc = OA(X,y,conf)
+    #print(f"Overal accuracy = {OveralAcc:.2f}")
+
+    return OveralAcc
 
 
-def RF_classification(X, y):
+def RF_classification(X, y, test_size):
     """
     Conduct RF classification
         X: features
         y: labels
     """
     clf = RF(n_estimators=100, random_state=42)
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.4)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size)
     clf.fit(X_train, y_train)
     pred = clf.predict(X_test)
     acc = accuracy_score(y_test, pred)
-    print("RF accuracy: %5.2f" % acc)
-    print("confusion matrix")
+    # print("RF accuracy: %5.2f" % acc)
+    # print("confusion matrix")
     conf = confusion_matrix(y_test, pred)
-    print(conf)
+    #print(conf)
+
+    OveralAcc = OA(X,y,conf)
+    #print(f"Overal accuracy = {OveralAcc:.2f}")
+    return OveralAcc
+
+def plot_accuracies(accuracies, title):
+
+    font = FontProperties(family='MS Gothic')
+
+    fig = plt.figure(facecolor=(.9,.9,.9))
+    ax = fig.add_subplot(1,1,1)
+    ax.set_facecolor((.9,.9,.9))
+    plt.plot([f'{i+1}:{9-i}' for i in range(9)], accuracies)
+    plt.title(title, fontproperties=font, fontsize=13)
+    plt.xlabel("Training/Test ratio", fontproperties=font)
+    plt.ylabel("Overal Accuracy", fontproperties=font)
+
+    for spine in ax.spines:
+        ax.spines[spine].set_visible(False)
+    ax.grid()
+
+    plt.show()
 
 
 if __name__=='__main__':
@@ -304,11 +337,11 @@ if __name__=='__main__':
     path = 'pointclouds-500/pointclouds-500'
 
     # conduct feature preparation
-    print('Start preparing features')
+    print(f'\n{'='*100}\nStart preparing features\n{'='*100}')
     feature_preparation(data_path=path)
 
     # load the data
-    print('Start loading data from the local file')
+    print(f'\n{'='*100}\nStart loading data from the local file\n{'='*100}')
     ID, X, y = data_loading()
 
     # determine the 4 most important features
@@ -316,20 +349,29 @@ if __name__=='__main__':
     selected_features = select_4_features()
 
     # visualize features
-    print('Visualize the features')
-    feature_visualization(X=X)
+    #print('Visualize the features')
+    # feature_visualization(X=X)
 
-    # SVM classification
-    print('Start SVM classification')
-    SVM_classification(X, y)
-
-    # RF classification
-    print('Start RF classification')
-    RF_classification(X, y)
-
-    # select 4 best features
     selected_indices = get_feature_indices(selected_features)
     X_selected = X[:, selected_indices]
 
-    SVM_classification(X_selected, y)
-    RF_classification(X_selected, y)
+    # SVM classification
+    print(f'\n{'='*100}\nStart SVM classification\n{'='*100}')
+    accuracies = []
+    for i in tqdm(range(1,10)):
+        accuracies.append(SVM_classification(X_selected, y, 0.1*i))
+    plot_accuracies(accuracies, "SVM overal accuracy per training/test ratio")
+
+    # RF classification
+    print(f'\n{'='*100}\nStart RF classification\n{'='*100}')
+    accuracies=[]
+    for i in tqdm(range(1,10)):
+        accuracies.append(RF_classification(X_selected, y, 0.1*i))
+    plot_accuracies(accuracies, "RF overal accuracy per training/test ratio")
+    
+
+    # select 4 best features
+    
+
+    SVM_classification(X_selected, y, .4)
+    RF_classification(X_selected, y, .4)
