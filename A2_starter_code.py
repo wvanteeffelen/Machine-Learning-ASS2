@@ -266,19 +266,19 @@ def feature_visualization(X):
 
 
 def OA(X, y, conf) -> float:
-    N = len(X)
+    N = np.sum(conf)
     C = 5
     OA = 1/N * conf.trace()
     return OA
 
-def SVM_classification(X, y, test_size):
+def SVM_classification(X, y, kern='linear', test_size=0.4):
     """
     Conduct SVM classification
         X: features
         y: labels
     """
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size)
-    clf = svm.SVC(kernel='linear')
+    clf = svm.SVC(kernel=kern)
     clf.fit(X_train, y_train)
     y_preds = clf.predict(X_test)
     acc = accuracy_score(y_test, y_preds)
@@ -287,12 +287,12 @@ def SVM_classification(X, y, test_size):
     conf = confusion_matrix(y_test, y_preds)
     #print(conf)
     OveralAcc = OA(X,y,conf)
-    #print(f"Overal accuracy = {OveralAcc:.2f}")
-
+    # print(f"Overal accuracy = {OveralAcc:.2f}")     
     return OveralAcc
+ 
 
 
-def RF_classification(X, y, test_size):
+def RF_classification(X, y, test_size=0.4):
     """
     Conduct RF classification
         X: features
@@ -311,6 +311,7 @@ def RF_classification(X, y, test_size):
     OveralAcc = OA(X,y,conf)
     #print(f"Overal accuracy = {OveralAcc:.2f}")
     return OveralAcc
+
 
 def plot_accuracies(accuracies, title):
 
@@ -355,23 +356,28 @@ if __name__=='__main__':
     selected_indices = get_feature_indices(selected_features)
     X_selected = X[:, selected_indices]
 
+    print(f'Testing different kernel types for SVM classification and reporting the accuracy...')
+    for kernel in ['linear', 'rbf', 'poly', 'sigmoid']:
+        acc = SVM_classification(X_selected, y, kern=kernel,  test_size=0.4)
+        print(f'{kernel} has an accuracy of {acc}')
+
     # SVM classification
     print(f'\n{'='*100}\nStart SVM classification\n{'='*100}')
     accuracies = []
     for i in tqdm(range(1,10)):
-        accuracies.append(SVM_classification(X_selected, y, 0.1*i))
+        accuracies.append(SVM_classification(X_selected, y, test_size=0.1*i))
     plot_accuracies(accuracies, "SVM overal accuracy per training/test ratio")
 
     # RF classification
     print(f'\n{'='*100}\nStart RF classification\n{'='*100}')
     accuracies=[]
     for i in tqdm(range(1,10)):
-        accuracies.append(RF_classification(X_selected, y, 0.1*i))
+        accuracies.append(RF_classification(X_selected, y, test_size=0.1*i))
     plot_accuracies(accuracies, "RF overal accuracy per training/test ratio")
     
 
     # select 4 best features
     
 
-    SVM_classification(X_selected, y, .4)
-    RF_classification(X_selected, y, .4)
+    SVM_classification(X_selected, y, test_size=.4)
+    RF_classification(X_selected, y, test_size=.4)
